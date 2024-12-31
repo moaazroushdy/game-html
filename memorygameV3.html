@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game for Kids</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #ff6f61;
+        }
+
+        .difficulty-buttons {
+            margin-bottom: 20px;
+        }
+
+        .difficulty-buttons button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: #ff6f61;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+
+        .difficulty-buttons button:hover {
+            background-color: #ff3b2f;
+        }
+
+        .game-board {
+            display: grid;
+            grid-gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: 80px;
+            height: 80px;
+            background-color: #ff6f61;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0;
+            position: relative;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            background-color: #88d8b0;
+            cursor: default;
+        }
+
+        .card img {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            display: none;
+            position: absolute;
+        }
+
+        .card.flipped img {
+            display: block;
+        }
+
+        #reset-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: #ff6f61;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #reset-button:hover {
+            background-color: #ff3b2f;
+        }
+
+        #score {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #555;
+        }
+
+        #timer {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Memory Game for Kids</h1>
+        <div class="difficulty-buttons">
+            <button onclick="startGame(4)">Easy (4x4)</button>
+            <button onclick="startGame(6)">Medium (6x6)</button>
+            <button onclick="startGame(8)">Hard (8x8)</button>
+        </div>
+        <div id="game-board" class="game-board"></div>
+        <button id="reset-button">Reset Game</button>
+        <p id="score">Moves: 0</p>
+        <p id="timer">Time: 0s</p>
+    </div>
+    <script>
+        let images = [];
+        let flippedCards = [];
+        let matchedCards = [];
+        let moves = 0;
+        let timer = 0;
+        let timerInterval;
+        let gridSize = 4;
+
+        const gameBoard = document.getElementById('game-board');
+        const resetButton = document.getElementById('reset-button');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+
+        // Large pool of online image URLs (48 images, 24 pairs)
+        const imagePool = [
+            'https://img.icons8.com/color/96/dog.png',
+            'https://img.icons8.com/color/96/cat.png',
+            'https://img.icons8.com/color/96/rabbit.png',
+            'https://img.icons8.com/color/96/bear.png',
+            'https://img.icons8.com/color/96/panda.png',
+            'https://img.icons8.com/color/96/fox.png',
+            'https://img.icons8.com/color/96/lion.png',
+            'https://img.icons8.com/color/96/tiger.png',
+            'https://img.icons8.com/color/96/elephant.png',
+            'https://img.icons8.com/color/96/monkey.png',
+            'https://img.icons8.com/color/96/penguin.png',
+            'https://img.icons8.com/color/96/owl.png',
+            'https://img.icons8.com/color/96/fish.png',
+            'https://img.icons8.com/color/96/turtle.png',
+            'https://img.icons8.com/color/96/frog.png',
+            'https://img.icons8.com/color/96/bee.png',
+            'https://img.icons8.com/color/96/butterfly.png',
+            'https://img.icons8.com/color/96/snake.png',
+            'https://img.icons8.com/color/96/cow.png',
+            'https://img.icons8.com/color/96/pig.png',
+            'https://img.icons8.com/color/96/sheep.png',
+            'https://img.icons8.com/color/96/chicken.png',
+            'https://img.icons8.com/color/96/duck.png',
+            'https://img.icons8.com/color/96/horse.png',
+            'https://img.icons8.com/color/96/zebra.png',
+            'https://img.icons8.com/color/96/giraffe.png',
+            'https://img.icons8.com/color/96/rhinoceros.png',
+            'https://img.icons8.com/color/96/hippopotamus.png',
+            'https://img.icons8.com/color/96/kangaroo.png',
+            'https://img.icons8.com/color/96/koala.png',
+            'https://img.icons8.com/color/96/polar-bear.png',
+            'https://img.icons8.com/color/96/wolf.png',
+            'https://img.icons8.com/color/96/deer.png',
+            'https://img.icons8.com/color/96/gorilla.png',
+            'https://img.icons8.com/color/96/crocodile.png',
+            'https://img.icons8.com/color/96/dolphin.png',
+            'https://img.icons8.com/color/96/whale.png',
+            'https://img.icons8.com/color/96/shark.png',
+            'https://img.icons8.com/color/96/octopus.png',
+            'https://img.icons8.com/color/96/jellyfish.png',
+            'https://img.icons8.com/color/96/crab.png',
+            'https://img.icons8.com/color/96/lobster.png',
+            'https://img.icons8.com/color/96/starfish.png',
+            'https://img.icons8.com/color/96/seahorse.png',
+            'https://img.icons8.com/color/96/toucan.png',
+            'https://img.icons8.com/color/96/parrot.png',
+            'https://img.icons8.com/color/96/flamingo.png'
+        ];
+
+        // Start the game with a specific grid size
+        function startGame(size) {
+            gridSize = size;
+            resetGame();
+        }
+
+        // Shuffle the images
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Create the game board
+        function createBoard() {
+            const totalCards = gridSize * gridSize;
+            const selectedImages = imagePool.slice(0, totalCards / 2);
+            images = [...selectedImages, ...selectedImages];
+            shuffle(images);
+
+            gameBoard.innerHTML = '';
+            gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 80px)`;
+            images.forEach((image, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.dataset.value = image;
+                cardElement.dataset.index = index;
+                cardElement.addEventListener('click', flipCard);
+                const imgElement = document.createElement('img');
+                imgElement.src = image;
+                cardElement.appendChild(imgElement);
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        // Flip a card
+        function flipCard() {
+            if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                this.classList.add('flipped');
+                flippedCards.push(this);
+
+                if (flippedCards.length === 2) {
+                    setTimeout(checkMatch, 500);
+                    moves++;
+                    scoreDisplay.textContent = `Moves: ${moves}`;
+                }
+            }
+        }
+
+        // Check if the flipped cards match
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.value === card2.dataset.value) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCards.push(card1, card2);
+
+                if (matchedCards.length === images.length) {
+                    clearInterval(timerInterval);
+                    alert(`Congratulations! You won in ${moves} moves and ${timer} seconds!`);
+                }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            flippedCards = [];
+        }
+
+        // Reset the game
+        function resetGame() {
+            flippedCards = [];
+            matchedCards = [];
+            moves = 0;
+            timer = 0;
+            scoreDisplay.textContent = `Moves: ${moves}`;
+            timerDisplay.textContent = `Time: ${timer}s`;
+            clearInterval(timerInterval);
+            createBoard();
+            timerInterval = setInterval(() => {
+                timer++;
+                timerDisplay.textContent = `Time: ${timer}s`;
+            }, 1000);
+        }
+
+        // Initialize the game
+        resetButton.addEventListener('click', resetGame);
+        startGame(4); // Start with easy mode by default
+    </script>
+</body>
+</html>
